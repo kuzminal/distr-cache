@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"distr-cache/internal/cache"
 )
@@ -11,10 +12,8 @@ type CacheServer struct {
 	cache *cache.Cache
 }
 
-func NewCacheServer() *CacheServer {
-	return &CacheServer{
-		cache: cache.NewCache(),
-	}
+func NewCacheServer(cache *cache.Cache) *CacheServer {
+	return &CacheServer{cache: cache}
 }
 func (cs *CacheServer) SetHandler(w http.ResponseWriter, r *http.Request) {
 	var req struct {
@@ -25,7 +24,7 @@ func (cs *CacheServer) SetHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	cs.cache.Set(req.Key, req.Value)
+	cs.cache.Set(req.Key, req.Value, 1*time.Hour)
 	w.WriteHeader(http.StatusOK)
 }
 func (cs *CacheServer) GetHandler(w http.ResponseWriter, r *http.Request) {
