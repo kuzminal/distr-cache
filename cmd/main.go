@@ -3,20 +3,32 @@ package main
 import (
 	"distr-cache/internal/cache"
 	"distr-cache/internal/server"
-	"fmt"
+	"flag"
+	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 )
 
+var (
+	port  string
+	peers string
+)
+
 func main() {
+	flag.StringVar(&port, "port", ":8080", "HTTP server port")
+	flag.StringVar(&peers, "peers", "", "Comma-separated list of peer addresses")
+	flag.Parse()
+
+	peerList := strings.Split(peers, ",")
 	cache := cache.NewCache(5) // Setting capacity to 5 for LRU
 	cache.StartEvictionTicker(1 * time.Minute)
-	cs := server.NewCacheServer(cache)
+	cs := server.NewCacheServer(cache, peerList)
 	http.HandleFunc("/set", cs.SetHandler)
 	http.HandleFunc("/get", cs.GetHandler)
-	err := http.ListenAndServe(":8080", nil)
+	slog.Info("Starting server on port", "port", port)
+	err := http.ListenAndServe(port, nil)
 	if err != nil {
-		fmt.Println(err)
-		return
+		slog.Error(err.Error())
 	}
 }
